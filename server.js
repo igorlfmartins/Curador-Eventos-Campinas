@@ -4,6 +4,11 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from "@google/genai";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -13,6 +18,7 @@ const PORT = 3001;
 app.use(helmet());
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'dist')));
 
 const server = app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
@@ -167,4 +173,9 @@ app.post('/api/search-source', async (req, res) => {
     console.error(`Erro geral em ${sourceName}:`, error.message);
     res.json({ events: [], error: error.message }); 
   }
+});
+
+// Catch-all para SPA (React)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
