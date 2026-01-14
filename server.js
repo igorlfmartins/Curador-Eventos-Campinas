@@ -96,7 +96,7 @@ app.post('/api/search-source', async (req, res) => {
       if (!SERPER_KEY) return res.json({ events: [], warning: "Sem chave Serper" });
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s máx para Serper
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s máx para Serper
 
       try {
         const serperResp = await fetch("https://google.serper.dev/search", {
@@ -129,9 +129,9 @@ app.post('/api/search-source', async (req, res) => {
     }
     // --- MODO 2: SCRAPE (FIRECRAWL) ---
     else {
-      // Timeout Firecrawl: 20s (ainda mais curto para não travar fila)
+      // Timeout Firecrawl: 90s (ainda mais curto para não travar fila)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
 
       try {
         const firecrawlResp = await fetch('https://api.firecrawl.dev/v2/scrape', {
@@ -174,21 +174,32 @@ app.post('/api/search-source', async (req, res) => {
 
     const prompt = `
       Contexto: Sou um curador de eventos B2B e Networking em Campinas/SP.
-      Hoje: ${todayStr}.
+      Hoje: ${todayStr} (dia/mês/ano).
       Fonte: ${sourceName} (${mode}).
       
-      OBJETIVO: Extrair QUALQUER evento que pareça uma oportunidade de conexão profissional, aprendizado ou negócios.
-      
-      REGRAS:
-      1. Priorize: Palestras, Workshops, Feiras, Congressos, Cafés de Negócios.
-      2. INCLUA eventos de tecnologia, inovação, startups, marketing, vendas.
-      3. SEJA MENOS CRITERIOSO: Na dúvida, inclua o evento e marque oportunidade como "Networking Geral".
-      4. IGNORE APENAS: Shows de música pura, teatro, stand-up comedy, festas infantis.
+      OBJETIVO: Extrair APENAS eventos FUTUROS (a partir de hoje, inclusive) que sejam oportunidades de conexão profissional.
+      IMPORTANTE: O ecossistema é fragmentado. Se for notícia, tente achar o link DA INSCRIÇÃO ou DO ORGANIZADOR dentro do texto, não apenas o link da notícia.
+
+      REGRAS DE OURO:
+      1. DATAS: Verifique EXPLICITAMENTE se a data do evento é >= ${todayStr}. SE JÁ PASSOU, DESCARTE IMEDIATAMENTE.
+      2. TIPO: Priorize Palestras, Workshops, Feiras, Congressos, Cafés de Negócios, Happy Hours Corporativos.
+      3. INCLUA: Tecnologia, Inovação, Startups, Marketing, Vendas, Direito, Indústria.
+      4. IMPRECISÃO: Se a data for "Próxima quinta", calcule baseada em hoje (${todayStr}). Se não tiver ano, assuma o próximo ano coerente.
+      5. LINK: Em notícias ou listas, o "link" deve ser, se possível, para a página de inscrição/detalhes do evento. Se não achar, use o da fonte.
+
+      IGNORE: Eventos passados, Política Partidária, Religiosos puros, Entretenimento puro (Shows/Teatro), Festas Infantis.
 
       JSON Saída:
       {
-        "events": [{ "title": "...", "date": "DD/MM", "location": "...", "link": "...", "analysis": "...", "opportunity": "..." }],
-        "debug_summary": "Explique em 1 frase o que encontrou no texto."
+        "events": [{ 
+          "title": "Titulo Claro", 
+          "date": "dd/mm/yyyy", 
+          "location": "Local", 
+          "link": "URL mais direta possível", 
+          "analysis": "Pq é relevante?", 
+          "opportunity": "Networking / Conteúdo / Vendas" 
+        }],
+        "debug_summary": "Encontrados X eventos futuros. Y descartados por data antiga."
       }
       
       Texto para análise:
@@ -202,7 +213,7 @@ app.post('/api/search-source', async (req, res) => {
       config: { responseMimeType: 'application/json' }
     });
 
-    const aiResp = await withTimeout(aiPromise, 25000);
+    const aiResp = await withTimeout(aiPromise, 60000);
 
     const cleanText = aiResp.text?.replace(/```json/g, '').replace(/```/g, '').trim();
     const result = JSON.parse(cleanText || '{ "events": [], "debug_summary": "Erro no parse" }');

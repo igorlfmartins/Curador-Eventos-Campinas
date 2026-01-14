@@ -11,8 +11,14 @@ import autoTable from 'jspdf-autotable';
 const SOURCES = [
   {
     id: 'google_search',
-    name: 'Google Search (Varredura)',
+    name: 'Google Search (Portais)',
     url: 'eventos de negócios networking campinas palestras workshops',
+    mode: 'search' as const
+  },
+  {
+    id: 'google_agenda',
+    name: 'Google Search (Agendas)',
+    url: 'agenda eventos negócios campinas inscrições abertas',
     mode: 'search' as const
   },
   { id: 'sympla_palestras', name: 'Sympla (Palestras)', url: 'https://www.sympla.com.br/eventos/campinas-sp/congressos-e-palestras', mode: 'scrape' as const },
@@ -54,8 +60,6 @@ function App() {
       setSourceStatuses(prev => prev.map(s => s.id === source.id ? { ...s, status: 'loading' } : s));
 
       try {
-        const { events: foundEvents, warning, error } = await fetchEventsFromSource(source.name, source.url, source.mode);
-
         const { events: foundEvents, warning, error, debug } = await fetchEventsFromSource(source.name, source.url, source.mode);
 
         if (warning || debug) {

@@ -7,9 +7,9 @@ export const fetchEventsFromSource = async (
   url: string,
   mode: 'scrape' | 'search' = 'scrape'
 ): Promise<{ events: B2BEvent[], warning?: string, error?: string, debug?: string }> => {
-  // Timeout de segurança no Frontend (40s) para garantir que a fila ande
+  // Timeout de segurança no Frontend (180s) para garantir que a fila ande
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 40000);
+  const timeoutId = setTimeout(() => controller.abort(), 180000);
 
   try {
     const response = await fetch(`${API_URL}/search-source`, {
