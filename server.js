@@ -208,9 +208,12 @@ app.post('/api/search-source', async (req, res) => {
 
     // Timeout na IA de 25 segundos
     const aiPromise = ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      model: 'gemini-2.0-flash',
+      contents: limitedContent, // Simplificando para passar o conteúdo direto como prompt
+      config: {
+        responseMimeType: 'application/json',
+        systemInstruction: prompt.substring(0, prompt.indexOf('Texto para análise:')) // Passando as instruções como sistema se possível, ou apenas unindo
+      }
     });
 
     const aiResp = await withTimeout(aiPromise, 60000);
